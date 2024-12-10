@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: spring_security
+  security:
+    user:
+      name: mypark
+      password: test123
+
+  datasource:
+    url: jdbc:postgresql://${PG_HOST:localhost}:${PG_PORT:5432}/${PG_DATABASE:postgres}
+    username: ${PG_USER:postgres}
+    password: ${PG_PASSWORD:test123}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+#        show_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    database-platform: org.hibernate.spatial.dialect.postgis.PostgisDialect
