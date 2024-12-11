@@ -1,6 +1,7 @@
 package com.study.spring_security.service;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -33,16 +34,32 @@ public class JWTService {
         }
     }
 
-    public String generateToken(String username) {
+    public String generateAccessToken(String username) {
 
         Map<String, Object> claims = new HashMap<>();
 
+        // 5 minutes
+        long accessTokenValidity = 5 * 60 * 1000;
         return Jwts.builder()
                 .claims()
                 .add(claims)
                 .subject(username)
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 60 * 60 * 30))
+                .expiration(new Date(System.currentTimeMillis() + accessTokenValidity))
+                .and()
+                .signWith(getKey())
+                .compact();
+    }
+
+    public String generateRefreshToken(String username) {
+        Map<String, Object> claims = new HashMap<>();
+        long refreshTokenValidity = 7 * 24 * 60 * 60 * 1000;
+        return Jwts.builder()
+                .claims()
+                .add(claims)
+                .subject(username)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + refreshTokenValidity))
                 .and()
                 .signWith(getKey())
                 .compact();
@@ -82,5 +99,14 @@ public class JWTService {
 
     private Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
+    }
+
+    public boolean isValid(String token) {
+        try {
+            Jwts.parser().verifyWith(getKey()).build().parseSignedClaims(token);
+            return true;
+        } catch (JwtException e) {
+            return false;
+        }
     }
 }

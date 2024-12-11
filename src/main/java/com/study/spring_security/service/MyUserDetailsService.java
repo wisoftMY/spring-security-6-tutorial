@@ -25,7 +25,6 @@ public class MyUserDetailsService implements UserDetailsService {
         Users user = userRepository.findByUsernameWithRoles(username);
 
         if(user == null) {
-            System.out.println("User Not Found");
             throw new UsernameNotFoundException("User Not Found");
         }
 

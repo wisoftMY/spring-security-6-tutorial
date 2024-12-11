@@ -13,7 +13,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 @Service
@@ -43,12 +45,41 @@ public class UserService {
         return UserRegisterDtoConverter.toResponse(savedUser);
     }
 
-    public String verify(Users user) {
+    public Map<String, String> verify(Users user) {
         Authentication authentication =
-                authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword()));
-        if(authentication.isAuthenticated())
-            return jwtService.generateToken(user.getUsername());
+                authenticationManager.authenticate(
+                        new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword())
+                );
 
-        return "Fail";
+        if (authentication.isAuthenticated()) {
+            // Access Token과 Refresh Token 생성
+            String accessToken = jwtService.generateAccessToken(user.getUsername());
+            String refreshToken = jwtService.generateRefreshToken(user.getUsername());
+
+            Map<String, String> tokens = new HashMap<>();
+            tokens.put("accessToken", accessToken);
+            tokens.put("refreshToken", refreshToken);
+
+            return tokens;
+        }
+
+        throw new RuntimeException("Authentication failed");
+    }
+
+
+    public Map<String, String> tokenRefresh(String refreshToken) {
+        if (refreshToken.startsWith("Bearer ")) {
+            refreshToken = refreshToken.substring(7);
+        }
+        if (jwtService.isValid(refreshToken)) {
+            String username = jwtService.extractUserName(refreshToken);
+            String newAccessToken = jwtService.generateAccessToken(username);
+
+            Map<String, String> tokens = new HashMap<>();
+            tokens.put("accessToken", newAccessToken);
+            tokens.put("refreshToken", refreshToken);
+            return tokens;
+        }
+        throw new RuntimeException("Token refresh expired");
     }
 }
